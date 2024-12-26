@@ -15,7 +15,6 @@ public class Move : MonoBehaviour
 
     private void Update()
     {
-        Debug.Log(Speed.Value);
         characterController.Move(Direction.Value * Speed.Value * Time.deltaTime);
     }
 }

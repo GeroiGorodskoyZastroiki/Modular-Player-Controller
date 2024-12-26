@@ -1,7 +1,7 @@
 using UnityEngine;
 using R3;
 
-public class Run : MonoBehaviour, IMoveChangeSpeed
+public class Run : MonoBehaviour, IMoveChangeSpeed, IStaminaChangeValue
 {
     private bool _isChangingSpeed = false;
     public bool IsChangingSpeed
@@ -14,14 +14,24 @@ public class Run : MonoBehaviour, IMoveChangeSpeed
             else move.Speed.RemoveProcessor(ChangeSpeed);
         }
     }
-    [SerializeField] private float speedFactor = 6f;
+    [SerializeField] private float _speedFactor = 2f;
+    public Processed<float> StaminaDecSpeed = new Processed<float>();
 
-    private Move move;
+    Move move;
+    Stamina stamina;
 
     private void Awake()
     {
         move = GetComponent<Move>();
+        stamina = GetComponent<Stamina>();
     }
 
-    public void ChangeSpeed(ref float speed) => speed *= speedFactor;
+    private void Update() 
+    {
+        ChangeStamina();
+    }
+
+    public void ChangeSpeed(ref float speed) => speed *= _speedFactor;
+
+    public void ChangeStamina() => stamina.stamina.Value.Value = Mathf.Clamp(stamina.stamina.Value.Value - (IsChangingSpeed ? StaminaDecSpeed.Value : 0f) * Time.deltaTime, stamina.stamina.MinValue.Value, stamina.stamina.MaxValue.Value);
 }

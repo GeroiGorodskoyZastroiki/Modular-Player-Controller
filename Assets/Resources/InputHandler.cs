@@ -43,14 +43,5 @@ public class InputHandler : MonoBehaviour, IMoveChangeDirection
             run.IsChangingSpeed = false;
     }
 
-    public void OnCrouch()
-    {
-
-    }
-
-    public void ChangeDirection (ref Vector3 value)
-    {
-        Debug.Log(moveDirection);
-        value += moveDirection.Value;
-    }
+    public void ChangeDirection (ref Vector3 value) => value += moveDirection.Value;
 }

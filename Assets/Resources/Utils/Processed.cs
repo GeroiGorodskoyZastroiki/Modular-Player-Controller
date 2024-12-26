@@ -29,13 +29,20 @@ public class Processed<T>
         ProcessOnGet = processOnGet;
         BaseValue = initialValue;
         _value = initialValue;
-        Processors.DistinctUntilChanged().Subscribe(_ => ProcessValue()); //не работает по какой-то причине (мб не будет срабатывать, т.к. объект остаётся тот же)
+        Processors.DistinctUntilChanged().Subscribe(_ => ProcessValue()); //не работает по какой-то причине (скорее всего не срабатывает, т.к. объект остаётся тот же)
     }
 
     public Processed(T initialValue)
     {
         BaseValue = initialValue;
         _value = initialValue;
+        Processors.DistinctUntilChanged().Subscribe(_ => ProcessValue()); //не работает по какой-то причине
+    }
+
+    public Processed()
+    {
+        BaseValue = default;
+        _value = default;
         Processors.DistinctUntilChanged().Subscribe(_ => ProcessValue()); //не работает по какой-то причине
     }
 

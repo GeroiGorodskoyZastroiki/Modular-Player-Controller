@@ -140,6 +140,7 @@ GameObject:
   - component: {fileID: 603807296}
   - component: {fileID: 603807301}
   - component: {fileID: 603807302}
+  - component: {fileID: 603807303}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -423,7 +424,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d0145225fb61f84bb164f1ed450c3eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speedFactor: 2
+  _speedFactor: 2
+  StaminaDecSpeed:
+    ProcessOnGet: 0
+    BaseValue: 20
+    _value: 0
 --- !u!114 &603807302
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -436,10 +441,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4ac23f55a617d54eb06f39bb9f9bcb6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Energy:
-    ProcessOnGet: 0
-    BaseValue: 100
-    _value: 100
+  <MinValue>k__BackingField: 0
+  <Value>k__BackingField: 100
+  <MaxValue>k__BackingField: 100
+  _staminaIncSpeed: 3
+--- !u!114 &603807303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 603807288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da820b1bb382a34792dad6d11b03b22, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mass:
+    MinValue:
+      value: 0
+    Value:
+      value: 30
+    MaxValue:
+      value: 50
 --- !u!1 &695352291
 GameObject:
   m_ObjectHideFlags: 0
