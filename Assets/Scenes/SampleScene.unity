@@ -132,12 +132,14 @@ GameObject:
   - component: {fileID: 603807292}
   - component: {fileID: 603807291}
   - component: {fileID: 603807290}
+  - component: {fileID: 603807300}
   - component: {fileID: 603807289}
+  - component: {fileID: 603807299}
   - component: {fileID: 603807297}
   - component: {fileID: 603807298}
   - component: {fileID: 603807296}
-  - component: {fileID: 603807299}
-  - component: {fileID: 603807300}
+  - component: {fileID: 603807301}
+  - component: {fileID: 603807302}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -271,7 +273,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26706fcad38383b47ab94391337e3fa9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Speed: 5
+  walkSpeed: 5
 --- !u!114 &603807297
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -284,6 +286,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce8faf789dcb35b4d82f54bb2e181842, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Direction:
+    ProcessOnGet: 0
+    BaseValue: {x: 0, y: 0, z: 0}
+    _value: {x: 0, y: 0, z: 0}
+  Speed:
+    ProcessOnGet: 0
+    BaseValue: 0
+    _value: 0
 --- !u!114 &603807298
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -341,8 +351,8 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 603807298}
         m_TargetAssemblyTypeName: InputHandler, Assembly-CSharp
-        m_MethodName: OnCrouch
-        m_Mode: 0
+        m_MethodName: 
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -401,6 +411,35 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
+--- !u!114 &603807301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 603807288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d0145225fb61f84bb164f1ed450c3eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speedFactor: 2
+--- !u!114 &603807302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 603807288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4ac23f55a617d54eb06f39bb9f9bcb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Energy:
+    ProcessOnGet: 0
+    BaseValue: 100
+    _value: 100
 --- !u!1 &695352291
 GameObject:
   m_ObjectHideFlags: 0

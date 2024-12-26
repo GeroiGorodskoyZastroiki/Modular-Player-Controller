@@ -1,69 +1,87 @@
+using UnityEngine;
+using System;
 using System.Collections.Generic;
 using R3;
+using Sirenix.OdinInspector;
 
-public enum ProcessValueMode
-{
-    OnGet,
-    OnAddRemoveProcessors,
-    OnBind
-}
+public delegate void Processor<T>(ref T value);
 
+[System.Serializable]
 public class Processed<T>
 {
-    public ProcessValueMode ProcessValueMode;
+    public bool ProcessOnGet = false;
     public T BaseValue;
-    private T _value;
+    [ReadOnly][SerializeField] private T _value;
     public T Value 
     { 
         get
         {
-            if (ProcessValueMode == ProcessValueMode.OnGet) ProcessValue();
+            if (ProcessOnGet) ProcessValue();
             return _value;
         }
         private set => _value = value;
     }
-    public ReactiveProperty<List<Processor<T>>> Processors = new ReactiveProperty<List<Processor<T>>>();
-    //public List<Processor<T>> Processors { get; private set; }
-    public delegate void Processor<T>(ref T value);
-
-    public Processed(T initialValue, ProcessValueMode processValueMode)
+    private ReactiveProperty<SortedList<int, List<Processor<T>>>> Processors = new ReactiveProperty<SortedList<int, List<Processor<T>>>>(new SortedList<int, List<Processor<T>>>());
+    private Dictionary<Processor<T>, List<IDisposable>> ProcessorDisposables = new Dictionary<Processor<T>, List<IDisposable>>();
+    
+    public Processed(T initialValue, bool processOnGet)
     {
-        ProcessValueMode = processValueMode;
+        ProcessOnGet = processOnGet;
         BaseValue = initialValue;
         _value = initialValue;
-        Processors.DistinctUntilChanged().Subscribe(_ => ProcessValue());
+        Processors.DistinctUntilChanged().Subscribe(_ => ProcessValue()); //не работает по какой-то причине (мб не будет срабатывать, т.к. объект остаётся тот же)
     }
 
     public Processed(T initialValue)
     {
-        ProcessValueMode = ProcessValueMode.OnGet;
         BaseValue = initialValue;
         _value = initialValue;
-        Processors.DistinctUntilChanged().Subscribe(_ => ProcessValue());
+        Processors.DistinctUntilChanged().Subscribe(_ => ProcessValue()); //не работает по какой-то причине
     }
 
-    // public void AddProcessor(Processor<T> processor)
-    // {
-    //     if (Processors.Value.Contains(processor)) return;
-    //     Processors.Value.Add(processor);
-    //     ProcessValue();
-    // }
+    public void AddProcessor(Processor<T> processor, int priority)
+    {
+        if (Processors.Value.ContainsKey(priority)) 
+            Processors.Value[priority].Add(processor);
+        else 
+            Processors.Value.Add(priority, new List<Processor<T>>(){processor});
 
-    // public void RemoveProcessor(Processor<T> processor)
-    // {
-    //     Processors.Value.Remove(processor);
-    //     ProcessValue();
-    // }
+        ProcessValue(); //костыль
+    }
 
-    public void ProcessOnChange<P>(ReactiveProperty<P> value) => value.Subscribe(_ => ProcessValue()); //надо объединять процессоры и биндинги, к одному процессору может быть много биндингов
-//Сделать шире. Надо как-то выделить всё после чего надо делать ProcessValue() и сохранять это в List
-    //public bool ContainsProcessor(Processor<T> processor) => Processors.Contains(processor);
+    public void RemoveProcessor(Processor<T> processor)
+    {
+        for (int i = 0; i < Processors.Value.Count; i++)
+        {
+            if (Processors.Value[i].Contains(processor))
+            {
+                Processors.Value[i].Remove(processor);
+                if (ProcessorDisposables.ContainsKey(processor))
+                {
+                    foreach (var disposable in ProcessorDisposables[processor])
+                        disposable.Dispose();
+                    ProcessorDisposables.Remove(processor);
+                }
 
-    private void ProcessValue()
+            }
+        }
+
+        ProcessValue(); //костыль
+    }
+
+    public void AddDisposableToProcessor(Processor<T> processor, IDisposable disposable)
+    {
+        if (ProcessorDisposables.ContainsKey(processor))
+            ProcessorDisposables[processor].Add(disposable);
+        else 
+            ProcessorDisposables.Add(processor, new List<IDisposable>(){disposable});
+    }
+
+    public void ProcessValue()
     {
         _value = BaseValue;
-        if (Processors.Value.Count == 0) return; //фикс
-        foreach (var processor in Processors.Value)
-            processor(ref _value);
+        foreach (var priorityList in Processors.Value)
+            foreach (var processor in priorityList.Value)
+                processor(ref _value);
     } 
 }

@@ -4,15 +4,5 @@ using UnityEngine;
 
 public class Stamina : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public Processed<float> Energy = new Processed<float>(100f);
 }

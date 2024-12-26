@@ -1,33 +1,26 @@
 using UnityEngine;
-using UnityEngine.Events;
-using System;
-using System.Linq;
-using R3;
 
-public class Walk : MonoBehaviour//, IChangeSpeed
+public class Walk : MonoBehaviour, IMoveChangeSpeed
 {
     private bool _isChangingSpeed = false;
-    public bool isChangingSpeed
+    public bool IsChangingSpeed
     {
         get { return _isChangingSpeed; }
         set 
         {
             _isChangingSpeed = value;
-            if (value == true) move.Speed.Processors.Value.Add(ChangeSpeed);//.AddProcessor(ChangeSpeed);
-            else move.Speed.Processors.Value.Remove(ChangeSpeed);//.RemoveProcessor(ChangeSpeed);
+            if (value == true) move.Speed.AddProcessor(ChangeSpeed, 0);
+            else move.Speed.RemoveProcessor(ChangeSpeed);
         }
     }
+    [SerializeField] private float walkSpeed = 100f;
 
-    public ReactiveProperty<bool> reactive = new ReactiveProperty<bool>();
-
-    public float Speed = 100f;
     Move move;
 
     private void Start() 
     {
-        //reactive.Subscribe(_ => ) //передавать подписку в сам processed
         move = GetComponent<Move>();
     }
 
-    public void ChangeSpeed(ref float speed) => speed += Speed;
+    public void ChangeSpeed(ref float speed) => speed += walkSpeed;
 }
