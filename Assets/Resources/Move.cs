@@ -3,8 +3,8 @@ using UnityEngine;
 
 public class Move : MonoBehaviour
 {
-    public Processed<Vector3> Direction = new Processed<Vector3>(Vector3.zero);
-    public Processed<float> Speed = new Processed<float>(0);
+    public Processed<Vector3> Direction;
+    public Processed<float> Speed;
 
     private CharacterController characterController;
 

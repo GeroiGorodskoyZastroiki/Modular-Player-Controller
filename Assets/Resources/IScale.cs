@@ -1,6 +1,9 @@
-using System;
-using R3;
-using UnityEngine;
+public interface IScale<T>
+{
+    T MinValue { get; }
+    T Value { get; }
+    T MaxValue { get; }
+}
 
 [System.Serializable]
 public class Scaled<T>

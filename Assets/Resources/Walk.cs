@@ -1,26 +1,28 @@
 using UnityEngine;
+using R3;
 
-public class Walk : MonoBehaviour, IMoveChangeSpeed
+public class Walk : MonoBehaviour
 {
-    private bool _isChangingSpeed = false;
-    public bool IsChangingSpeed
+    public SerializableReactiveProperty<bool> IsWalking;
+    [SerializeField] private float _walkSpeed;
+
+    Move _move;
+
+    private void Awake() 
     {
-        get { return _isChangingSpeed; }
-        set 
+        _move = GetComponent<Move>();
+
+        MoveSpeedOnIsWalking();
+    }
+
+    private void MoveSpeedOnIsWalking()
+    {
+        void ChangeSpeed(ref float speed) => speed += _walkSpeed;
+
+        IsWalking.Subscribe(value =>
         {
-            _isChangingSpeed = value;
-            if (value == true) move.Speed.AddProcessor(ChangeSpeed, 0);
-            else move.Speed.RemoveProcessor(ChangeSpeed);
-        }
+            if (value == true) _move.Speed.AddProcessor(ChangeSpeed, 0);
+            else _move.Speed.RemoveProcessor(ChangeSpeed);
+        }).AddTo(this);
     }
-    [SerializeField] private float walkSpeed = 100f;
-
-    Move move;
-
-    private void Start() 
-    {
-        move = GetComponent<Move>();
-    }
-
-    public void ChangeSpeed(ref float speed) => speed += walkSpeed;
 }
