@@ -11,7 +11,7 @@ public class Processed<T>
     public bool ProcessOnGet = false;
     [SerializeReference] public T BaseValue;
     [SerializeReference] protected T _value;
-    public T Value 
+    public T Value
     { 
         get
         {
@@ -29,7 +29,7 @@ public class Processed<T>
         _value = initialValue;
     }
 
-    public Processed() {} //нужен (видимо единственный вид конструктора, который срабатывает в редакторе?)
+    public Processed() {} //не удалять. в unity вызывается пустой конструктор
 
     public void AddProcessor(Processor<T> processor, int priority)
     {

@@ -1,14 +1,14 @@
 using UnityEngine;
 using R3;
 
-public class Run : MonoBehaviour, IStaminaChangeValue //IMoveChangeSpeed
+public class Run : MonoBehaviour
 {
     public ReactiveProcessed<bool> IsRunning = new ReactiveProcessed<bool>(false);
     public ReactiveProcessed<bool> CanRun = new ReactiveProcessed<bool>(true);
     [SerializeField] private float _runSpeedFactor;
     public Processed<float> StaminaDecSpeed;
-    [SerializeField] private float _staminaToStop = 1f;
-    [SerializeField] private float _staminaForRun = 10f;
+    [SerializeField] private float _staminaToStop;
+    [SerializeField] private float _staminaForRun;
 
     private Move _move;
     private Stamina _stamina;
@@ -53,7 +53,7 @@ public class Run : MonoBehaviour, IStaminaChangeValue //IMoveChangeSpeed
     private void IsRunningOnCanRun()
     {
         void ChangeIsRunning(ref bool value) => value = false; //неправильно использовать фиксированные значения, но ладно
-
+        //лучше конечно через observable сделать
         CanRun.Value.Subscribe(value =>
         {
             if (value == false) IsRunning.AddProcessor(ChangeIsRunning, 1);

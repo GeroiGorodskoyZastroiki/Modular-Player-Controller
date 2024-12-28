@@ -1,7 +1,7 @@
 using R3;
 using UnityEngine;
 
-public class Stamina : MonoBehaviour, IScale<SerializableReactiveProperty<float>>, IStaminaChangeValue
+public class Stamina : MonoBehaviour, IScale<SerializableReactiveProperty<float>>
 {
     [field: SerializeField] public SerializableReactiveProperty<float> MinValue { get; set; }
     [field: SerializeField] public SerializableReactiveProperty<float> Value { get; set; }

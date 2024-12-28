@@ -2,7 +2,7 @@ using R3;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class InputHandler : MonoBehaviour, IMoveChangeDirection
+public class InputHandler : MonoBehaviour
 {
     private ReactiveProperty<Vector3> _moveDirection = new ReactiveProperty<Vector3>();
 
@@ -37,24 +37,13 @@ public class InputHandler : MonoBehaviour, IMoveChangeDirection
 
     public void OnRun(InputAction.CallbackContext context)
     {
-        //if (_walk.IsWalking.Value == false) return;
-
         if (context.started)
             _run.IsRunning.AddProcessor(ChangeIsRunning, 0);
         if (context.canceled)
             _run.IsRunning.RemoveProcessor(ChangeIsRunning);
-
-        // if (context.started && _walk.IsWalking.Value)
-        //     if (!_run.IsRunning.ContainsProcessor(ChangeIsRunning))
-        //         _run.IsRunning.AddProcessor(ChangeIsRunning, 0);
-        // if (context.performed && _walk.IsWalking.Value)
-        //     if (!_run.IsRunning.ContainsProcessor(ChangeIsRunning))
-        //         _run.IsRunning.AddProcessor(ChangeIsRunning, 0);
-        // if (context.canceled)
-        //     _run.IsRunning.RemoveProcessor(ChangeIsRunning);
     }
 
     public void ChangeDirection (ref Vector3 value) => value += _moveDirection.Value;
 
-    public void ChangeIsRunning (ref bool value) => value = true;
+    public void ChangeIsRunning (ref bool value) => value = true; //не совсем правильно так делать
 }

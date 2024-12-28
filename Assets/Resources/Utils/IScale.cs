@@ -18,11 +18,4 @@ public class Scaled<T>
         Value = current;
         MaxValue = max;
     }
-
-    public Scaled()
-    {
-        MinValue = default;
-        Value = default;
-        MaxValue = default;
-    }
 }
