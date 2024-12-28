@@ -141,7 +141,7 @@ public class ProcessedDrawer : PropertyDrawer
             return baseHeight;
 
         // Высота для BaseValue и _value
-        float expandedHeight = baseHeight * 4 + spacing * 2;
+        float expandedHeight = baseHeight * 4 + spacing * 4;
 
         // Высота для Processors
         if (isProcessorsFoldoutOpen)

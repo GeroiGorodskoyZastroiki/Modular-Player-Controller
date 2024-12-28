@@ -29,7 +29,7 @@ public class Processed<T>
         _value = initialValue;
     }
 
-    public Processed() {} //не удалять. в unity вызывается пустой конструктор
+    public Processed() {} //не удалять, в unity вызывается пустой конструктор
 
     public void AddProcessor(Processor<T> processor, int priority)
     {

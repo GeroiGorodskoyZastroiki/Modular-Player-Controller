@@ -450,7 +450,7 @@ MonoBehaviour:
     _value: 1
     Processors:
       rid: 3532557790607572993
-  _runSpeedFactor: 2
+  _runSpeedFactor: 3
   StaminaDecSpeed:
     ProcessOnGet: 0
     BaseValue: 20
@@ -458,7 +458,7 @@ MonoBehaviour:
     Processors:
       rid: 3532557790607572994
   _staminaToStop: 1
-  _staminaForRun: 20
+  _staminaForRun: 25
   references:
     version: 2
     RefIds:
@@ -489,7 +489,7 @@ MonoBehaviour:
     value: 100
   <MaxValue>k__BackingField:
     value: 100
-  _staminaIncSpeed: 5
+  _staminaIncSpeed: 8
 --- !u!1 &695352291
 GameObject:
   m_ObjectHideFlags: 0
