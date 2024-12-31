@@ -1,11 +1,11 @@
 using R3;
 using UnityEngine;
 
-public class Stamina : MonoBehaviour, IScale<SerializableReactiveProperty<float>>
+public class Stamina : MonoBehaviour //, IScale<SerializableReactiveProperty<float>>
 {
-    [field: SerializeField] public SerializableReactiveProperty<float> MinValue { get; set; }
-    [field: SerializeField] public SerializableReactiveProperty<float> Value { get; set; }
-    [field: SerializeField] public SerializableReactiveProperty<float> MaxValue { get; set; }
+    public SerializableReactiveProperty<float> MinValue;
+    public SerializableReactiveProperty<float> Value;
+    public SerializableReactiveProperty<float> MaxValue;
     [SerializeField] private float _staminaIncSpeed;
 
     private void Update() 

@@ -25,7 +25,9 @@ public class InputHandler : MonoBehaviour
         if (context.started) 
         {
             _move.Direction.AddProcessor(ChangeDirection, 0);
-            _move.Direction.AddDisposableToProcessor(ChangeDirection, _moveDirection.Subscribe(_ => _move.Direction.ProcessValue()).AddTo(this));
+            object[] reactiveProperties = new object[]{ _moveDirection };
+            _move.Direction.AddSubscriptionsToReactiveProperties(ChangeDirection, reactiveProperties);
+
             _walk.IsWalking.Value = true;
         }
         if (context.canceled) 

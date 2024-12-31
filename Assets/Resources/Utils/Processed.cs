@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using R3;
+using System.Linq;
 
 public delegate void Processor<T>(ref T value);
 
@@ -20,7 +21,7 @@ public class Processed<T>
         }
     }
     [SerializeReference] private SortedList<int, List<Processor<T>>> Processors = new SortedList<int, List<Processor<T>>>();
-    private Dictionary<Processor<T>, List<IDisposable>> ProcessorDisposables = new Dictionary<Processor<T>, List<IDisposable>>();
+    private Dictionary<Processor<T>, DisposableBag> Subscriptions = new Dictionary<Processor<T>, DisposableBag>();
     
     public Processed(T initialValue, bool processOnGet = false)
     {
@@ -59,13 +60,12 @@ public class Processed<T>
         {
             if (processorList.Contains(processor))
             {
-                processorList.Remove(processor);
-                if (ProcessorDisposables.ContainsKey(processor))
+                if (Subscriptions.ContainsKey(processor))
                 {
-                    foreach (var disposable in ProcessorDisposables[processor])
-                        disposable.Dispose();
-                    ProcessorDisposables.Remove(processor);
+                    Subscriptions[processor].Dispose();
+                    Subscriptions.Remove(processor);
                 }
+                processorList.Remove(processor);
                 ProcessValue();
                 return;
             }
@@ -81,13 +81,43 @@ public class Processed<T>
         return false;
     }
 
-    public void AddDisposableToProcessor(Processor<T> processor, IDisposable disposable)
+    public void AddSubscriptionToReactiveProperty<R>(Processor<T> processor, ref ReactiveProperty<R> changingValue)
     {
-        if (ProcessorDisposables.ContainsKey(processor))
-            ProcessorDisposables[processor].Add(disposable);
-        else 
-            ProcessorDisposables.Add(processor, new List<IDisposable>(){disposable});
+        if (!Subscriptions.ContainsKey(processor)) 
+            Subscriptions.Add(processor, new DisposableBag());
+        Subscriptions[processor].Add(changingValue.Subscribe(value => ProcessValue()));
     }
+
+    public void AddSubscriptionsToReactiveProperties(Processor<T> processor, IEnumerable<object> reactiveProperties)
+    {
+        for (int i = 0; i < reactiveProperties.Count(); i++)
+        {
+            var item = reactiveProperties.ElementAt(i);
+
+            if (item == null) 
+            {
+                Debug.LogError($"Array element at {i} is skipped because it's null.");
+                continue;
+            }
+
+            Type itemType = item.GetType();
+
+            if (IsTypeReactiveProperty(itemType))
+            {
+                Type innerType = itemType.GetGenericArguments()[0];
+
+                var method = this.GetType().GetMethod("AddSubscriptionToReactiveProperty")
+                                    .MakeGenericMethod(innerType);
+
+                method.Invoke(this, new object[] { processor, item });
+            }
+            else Debug.LogError($"Array element at {i} is skipped because it's not ReactiveProperty<> or its descendant.");
+        }
+    }
+
+    private bool IsTypeReactiveProperty(Type type) =>
+        (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ReactiveProperty<>)) || 
+        (type.BaseType != null && type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(ReactiveProperty<>));
 
     public virtual void ProcessValue()
     {
@@ -116,9 +146,11 @@ public class ReactiveProcessed<T> : Processed<T>
         _reactiveValue = new ReactiveProperty<T>(initialValue);
     }
 
+    public ReactiveProcessed() : base() {} 
+
     public override void ProcessValue()
     {
         base.ProcessValue();
         _reactiveValue.Value = _value;
-    } 
+    }
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using R3;
+using System.Collections.Generic;
 
 public class Run : MonoBehaviour
 {
@@ -35,7 +36,7 @@ public class Run : MonoBehaviour
     {
         void ChangeCanRun(ref bool value) => value = false;
 
-        _walk.IsWalking.Subscribe(value => //это Subscribe style Processor, подходит для случаев, когда нужно именно удалять и добавлять процессор, а не пересчитывать при изменении
+        _walk.IsWalking.Subscribe(value =>
         {
             if (value == false) CanRun.AddProcessor(ChangeCanRun, 0);
             else CanRun.RemoveProcessor(ChangeCanRun);
@@ -46,8 +47,9 @@ public class Run : MonoBehaviour
     {
         void ChangeCanRunOnStamina(ref bool value) => value = (_stamina.Value.Value > _staminaForRun) || (IsRunning.Value.Value && _stamina.Value.Value > _staminaToStop);
 
-        CanRun.AddProcessor(ChangeCanRunOnStamina, 1); //(это Manual style Processor)
-        CanRun.AddDisposableToProcessor(ChangeCanRunOnStamina, _stamina.Value.Subscribe(_ => CanRun.ProcessValue()).AddTo(this));
+        CanRun.AddProcessor(ChangeCanRunOnStamina, 1);
+        List<object> reactiveProperties = new List<object>{ _stamina.Value, IsRunning.Value };
+        CanRun.AddSubscriptionsToReactiveProperties(ChangeCanRunOnStamina, reactiveProperties);
     }
 
     private void IsRunningOnCanRun()

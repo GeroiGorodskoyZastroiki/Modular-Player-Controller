@@ -483,11 +483,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4ac23f55a617d54eb06f39bb9f9bcb6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <MinValue>k__BackingField:
+  MinValue:
     value: 0
-  <Value>k__BackingField:
+  Value:
     value: 100
-  <MaxValue>k__BackingField:
+  MaxValue:
     value: 100
   _staminaIncSpeed: 8
 --- !u!1 &695352291
