@@ -78,11 +78,24 @@ public class ProcessedDrawer : PropertyDrawer
                         {
                             // Определяем тип T
                             Type processedType = fieldInfo.FieldType;
-                            Type genericTypeT = processedType.GetGenericArguments()[0];
+                            //Type genericTypeT = processedType.GetGenericArguments()[0];
 
                             // Ищем поле Processors
-                            FieldInfo processorsField = processedType.GetField("Processors",
-                                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                            // FieldInfo processorsField = processedType.GetField("Processors",
+                            //     BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+                            FieldInfo processorsField = null;
+                            Type currentType = processedType;
+
+                            // Ищем поле Processors в текущем и базовых типах
+                            while (currentType != null)
+                            {
+                                processorsField = currentType.GetField("Processors", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                                if (processorsField != null)
+                                    break;
+
+                                currentType = currentType.BaseType; // Переходим к базовому типу
+                            }
 
                             if (processorsField != null)
                             {
@@ -94,26 +107,38 @@ public class ProcessedDrawer : PropertyDrawer
                                         int key = (int)entry.Key; // Ключ — int
                                         var processorList = entry.Value as System.Collections.IEnumerable;
 
-                                        foreach (var processor in processorList)
+                                        foreach (var processorItem in processorList)
                                         {
-                                            if (processor is Delegate del)
+                                            // Проверяем, является ли элемент ReactiveProcessor<T>
+                                            if (processorItem != null)
                                             {
-                                                // Получаем имя метода
-                                                string methodName = del.Method.Name;
+                                                var processorType = processorItem.GetType();
+                                                var processorField = processorType.GetField("Processor",
+                                                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-                                                // Получаем имя класса (если есть объект)
-                                                string className = del.Target != null
-                                                    ? del.Target.GetType().Name
-                                                    : del.Method.DeclaringType.Name;
+                                                if (processorField != null)
+                                                {
+                                                    var processorDelegate = processorField.GetValue(processorItem) as Delegate;
+                                                    if (processorDelegate != null)
+                                                    {
+                                                        // Получаем имя метода
+                                                        string methodName = processorDelegate.Method.Name;
 
-                                                string processorName = $"{key} {className}:{methodName}";
+                                                        // Получаем имя класса (если есть объект)
+                                                        string className = processorDelegate.Target != null
+                                                            ? processorDelegate.Target.GetType().Name
+                                                            : processorDelegate.Method.DeclaringType.Name;
 
-                                                // Рисуем имя процессора
-                                                EditorGUI.LabelField(
-                                                    new Rect(position.x + EditorGUI.indentLevel * 15, currentY, position.width - 15, lineHeight),
-                                                    processorName
-                                                );
-                                                currentY += lineHeight + spacing;
+                                                        string processorName = $"{key} {className}:{methodName}";
+
+                                                        // Рисуем имя процессора
+                                                        EditorGUI.LabelField(
+                                                            new Rect(position.x + EditorGUI.indentLevel * 15, currentY, position.width - 15, lineHeight),
+                                                            processorName
+                                                        );
+                                                        currentY += lineHeight + spacing;
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -155,10 +180,24 @@ public class ProcessedDrawer : PropertyDrawer
                 if (fieldInfo != null)
                 {
                     object processedInstance = fieldInfo.GetValue(targetObject);
+                    Type processedType = fieldInfo.FieldType;
                     if (processedInstance != null)
                     {
-                        FieldInfo processorsField = fieldInfo.FieldType.GetField("Processors",
-                            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                        // FieldInfo processorsField = fieldInfo.FieldType.GetField("Processors",
+                        //     BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+                        FieldInfo processorsField = null;
+                        Type currentType = processedType;
+
+                        // Ищем поле Processors в текущем и базовых типах
+                        while (currentType != null)
+                        {
+                            processorsField = currentType.GetField("Processors", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                            if (processorsField != null)
+                                break;
+
+                            currentType = currentType.BaseType; // Переходим к базовому типу
+                        }
 
                         if (processorsField != null)
                         {

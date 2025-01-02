@@ -5,6 +5,9 @@ using UnityEngine.InputSystem;
 public class InputHandler : MonoBehaviour
 {
     private ReactiveProperty<Vector3> _moveDirection = new ReactiveProperty<Vector3>();
+    private ReactiveProperty<bool> _isRunnning = new ReactiveProperty<bool>();
+    ReactiveProcessor<Vector3> _moveDirectionOnInput;
+    ReactiveProcessor<bool> _isRunningOnInput;
 
     private Move _move;
     private Walk _walk;
@@ -15,6 +18,9 @@ public class InputHandler : MonoBehaviour
         _move = GetComponent<Move>();
         _walk = GetComponent<Walk>();
         _run = GetComponent<Run>();
+
+        RegisterMoveDirectionOnInput();
+        RegisterIsRunningOnInput();
     }
 
     public void OnMove(InputAction.CallbackContext context)
@@ -23,29 +29,28 @@ public class InputHandler : MonoBehaviour
         _moveDirection.Value = new Vector3(input.x, 0, input.y);
 
         if (context.started) 
-        {
-            _move.Direction.AddProcessor(ChangeDirection, 0);
-            object[] reactiveProperties = new object[]{ _moveDirection };
-            _move.Direction.AddSubscriptionsToReactiveProperties(ChangeDirection, reactiveProperties);
-
             _walk.IsWalking.Value = true;
-        }
         if (context.canceled) 
-        {
-            _move.Direction.RemoveProcessor(ChangeDirection);
             _walk.IsWalking.Value = false;
-        }
     }
 
     public void OnRun(InputAction.CallbackContext context)
     {
         if (context.started)
-            _run.IsRunning.AddProcessor(ChangeIsRunning, 0);
+            _isRunnning.Value = true;
         if (context.canceled)
-            _run.IsRunning.RemoveProcessor(ChangeIsRunning);
+            _isRunnning.Value = false;
     }
 
-    public void ChangeDirection (ref Vector3 value) => value += _moveDirection.Value;
+    void RegisterMoveDirectionOnInput()
+    {
+        _moveDirectionOnInput ??= new ReactiveProcessor<Vector3>((ref Vector3 value) => value += _moveDirection.Value, new object[] { _moveDirection });
+        _move.Direction.AddProcessor(_moveDirectionOnInput, 0);
+    }
 
-    public void ChangeIsRunning (ref bool value) => value = true; //не совсем правильно так делать
+    void RegisterIsRunningOnInput()
+    {
+        _isRunningOnInput ??= new ReactiveProcessor<bool>((ref bool value) => value = _isRunnning.Value, new object[] { _isRunnning });
+        _run.IsRunning.AddProcessor(_isRunningOnInput, 0);
+    }
 }

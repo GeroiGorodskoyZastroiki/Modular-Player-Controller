@@ -10,6 +10,10 @@ public class Run : MonoBehaviour
     public Processed<float> StaminaDecSpeed;
     [SerializeField] private float _staminaToStop;
     [SerializeField] private float _staminaForRun;
+    ReactiveProcessor<bool> _canRunOnIsWalking;
+    ReactiveProcessor<bool> _canRunOnStamina;
+    ReactiveProcessor<bool> _isRunningOnCanRun;
+    ReactiveProcessor<float> _moveSpeedOnIsRunning;
 
     private Move _move;
     private Stamina _stamina;
@@ -21,10 +25,10 @@ public class Run : MonoBehaviour
         _stamina = GetComponent<Stamina>();
         _walk = GetComponent<Walk>();
 
-        CanRunOnIsWalking();
-        CanRunOnStamina();
-        IsRunningOnCanRun();
-        MoveSpeedOnIsRunning();
+        RegisterCanRunOnIsWalking();
+        RegisterCanRunOnStamina();
+        RegisterIsRunningOnCanRun();
+        RegisterMoveSpeedOnIsRunning();
     }
 
     private void Update() 
@@ -32,46 +36,36 @@ public class Run : MonoBehaviour
         ChangeStamina();
     }
 
-    private void CanRunOnIsWalking()
+    private void RegisterCanRunOnIsWalking()
     {
-        void ChangeCanRun(ref bool value) => value = false;
+        //void ChangeCanRun(ref bool value) => value = false;
 
-        _walk.IsWalking.Subscribe(value =>
-        {
-            if (value == false) CanRun.AddProcessor(ChangeCanRun, 0);
-            else CanRun.RemoveProcessor(ChangeCanRun);
-        }).AddTo(this);
+        _canRunOnIsWalking ??= new ReactiveProcessor<bool>((ref bool value) => value = _walk.IsWalking.Value, new object[] { _walk.IsWalking });
+        CanRun.AddProcessor(_canRunOnIsWalking, 0);
     }
 
-    private void CanRunOnStamina()
+    private void RegisterCanRunOnStamina()
     {
-        void ChangeCanRunOnStamina(ref bool value) => value = (_stamina.Value.Value > _staminaForRun) || (IsRunning.Value.Value && _stamina.Value.Value > _staminaToStop);
+        //void ChangeCanRunOnStamina(ref bool value) => value = (_stamina.Value.Value > _staminaForRun) || (IsRunning.Value.Value && _stamina.Value.Value > _staminaToStop);
 
-        CanRun.AddProcessor(ChangeCanRunOnStamina, 1);
-        List<object> reactiveProperties = new List<object>{ _stamina.Value, IsRunning.Value };
-        CanRun.AddSubscriptionsToReactiveProperties(ChangeCanRunOnStamina, reactiveProperties);
+        _canRunOnStamina ??= new ReactiveProcessor<bool>((ref bool value) => value = (_stamina.Value.Value > _staminaForRun) || (IsRunning.Value.Value && _stamina.Value.Value > _staminaToStop), new object[] { _walk.IsWalking, _stamina.Value });
+        CanRun.AddProcessor(_canRunOnStamina, 1);
     }
 
-    private void IsRunningOnCanRun()
+    private void RegisterIsRunningOnCanRun()
     {
-        void ChangeIsRunning(ref bool value) => value = false; //неправильно использовать фиксированные значения, но ладно
-        //лучше конечно через observable сделать
-        CanRun.Value.Subscribe(value =>
-        {
-            if (value == false) IsRunning.AddProcessor(ChangeIsRunning, 1);
-            else IsRunning.RemoveProcessor(ChangeIsRunning);
-        }).AddTo(this);
+        _isRunningOnCanRun ??= new ReactiveProcessor<bool>((ref bool value) => value = CanRun.Value.Value ? value : false, new object[] { CanRun.Value });
+        IsRunning.AddProcessor(_isRunningOnCanRun, 1);
+
+        //void ChangeIsRunning(ref bool value) => value = false;
     }
 
-    private void MoveSpeedOnIsRunning()
+    private void RegisterMoveSpeedOnIsRunning()
     {
-        void ChangeSpeed(ref float speed) => speed *= _runSpeedFactor;
+        _moveSpeedOnIsRunning ??= new ReactiveProcessor<float>((ref float speed) => speed *= IsRunning.Value.Value ? _runSpeedFactor : 1, new object[] { IsRunning.Value });
+        _move.Speed.AddProcessor(_moveSpeedOnIsRunning, 1);
 
-        IsRunning.Value.Subscribe(value => 
-        {
-            if (value == true) _move.Speed.AddProcessor(ChangeSpeed, 1);
-            else _move.Speed.RemoveProcessor(ChangeSpeed);
-        }).AddTo(this);
+        // void ChangeSpeed(ref float speed) => speed *= _runSpeedFactor;
     }
 
     public void ChangeStamina() => _stamina.Value.Value = Mathf.Clamp(_stamina.Value.Value - (IsRunning.Value.Value ? StaminaDecSpeed.Value : 0f) * Time.deltaTime, _stamina.MinValue.Value, _stamina.MaxValue.Value);

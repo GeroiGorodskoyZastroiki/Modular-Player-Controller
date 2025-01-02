@@ -6,89 +6,31 @@ using System.Linq;
 
 public delegate void Processor<T>(ref T value);
 
-[System.Serializable]
-public class Processed<T>
+public class ReactiveProcessor<T> : IDisposable
 {
-    public bool ProcessOnGet = false;
-    [SerializeReference] public T BaseValue;
-    [SerializeReference] protected T _value;
-    public T Value
-    { 
-        get
-        {
-            if (ProcessOnGet) ProcessValue();
-            return _value;
-        }
-    }
-    [SerializeReference] private SortedList<int, List<Processor<T>>> Processors = new SortedList<int, List<Processor<T>>>();
-    private Dictionary<Processor<T>, DisposableBag> Subscriptions = new Dictionary<Processor<T>, DisposableBag>();
+    public Processor<T> Processor;
+    private DisposableBag Subscriptions = new DisposableBag();
+    public List<Processed<T>> Processeds = new List<Processed<T>>();
     
-    public Processed(T initialValue, bool processOnGet = false)
+    public ReactiveProcessor(Processor<T> processor, IEnumerable<object> reactiveProperties)
     {
-        ProcessOnGet = processOnGet;
-        BaseValue = initialValue;
-        _value = initialValue;
+        Processor = processor;
+        AddSubscriptionsToReactiveProperties(reactiveProperties);
     }
 
-    public Processed() {} //не удалять, в unity вызывается пустой конструктор
-
-    public void AddProcessor(Processor<T> processor, int priority)
+    public void Dispose()
     {
-        if (processor.Method.Name.Contains("b__")) 
-        {
-            Debug.LogError("Processor was not added. Only named not anonymous methods are supported.");
-            return;
-        }
-
-        if (ContainsProcessor(processor))
-        {
-            Debug.LogWarning("Equal proccessors can not be added. For now...");
-            return;
-        }
-
-        if (Processors.ContainsKey(priority)) 
-            Processors[priority].Add(processor);
-        else 
-            Processors.Add(priority, new List<Processor<T>>(){processor});
-
-        ProcessValue();
+        foreach (var processed in Processeds)
+            processed.RemoveProcessor(this);
+        Subscriptions.Dispose();
     }
 
-    public void RemoveProcessor(Processor<T> processor)
-    {
-        foreach (var processorList in Processors.Values)
-        {
-            if (processorList.Contains(processor))
-            {
-                if (Subscriptions.ContainsKey(processor))
-                {
-                    Subscriptions[processor].Dispose();
-                    Subscriptions.Remove(processor);
-                }
-                processorList.Remove(processor);
-                ProcessValue();
-                return;
-            }
-        }
-        Debug.LogWarning("Can't find processor to remove. This might happen when RemoveProcessor() called in subscription where it was not added at first. Normal at startup.");        
-    }
+    ~ReactiveProcessor() => Dispose(); //проверить
 
-    public bool ContainsProcessor(Processor<T> processor)
-    {
-        foreach (var processorList in Processors.Values)
-            if (processorList.Contains(processor))
-                return true;
-        return false;
-    }
+    public void AddSubscriptionToReactiveProperty<R>(ref ReactiveProperty<R> changingValue) =>
+        Subscriptions.Add(changingValue.Subscribe(value => ProcessValue()));
 
-    public void AddSubscriptionToReactiveProperty<R>(Processor<T> processor, ref ReactiveProperty<R> changingValue)
-    {
-        if (!Subscriptions.ContainsKey(processor)) 
-            Subscriptions.Add(processor, new DisposableBag());
-        Subscriptions[processor].Add(changingValue.Subscribe(value => ProcessValue()));
-    }
-
-    public void AddSubscriptionsToReactiveProperties(Processor<T> processor, IEnumerable<object> reactiveProperties)
+    public void AddSubscriptionsToReactiveProperties(IEnumerable<object> reactiveProperties)
     {
         for (int i = 0; i < reactiveProperties.Count(); i++)
         {
@@ -109,7 +51,7 @@ public class Processed<T>
                 var method = this.GetType().GetMethod("AddSubscriptionToReactiveProperty")
                                     .MakeGenericMethod(innerType);
 
-                method.Invoke(this, new object[] { processor, item });
+                method.Invoke(this, new object[] { item });
             }
             else Debug.LogError($"Array element at {i} is skipped because it's not ReactiveProperty<> or its descendant.");
         }
@@ -119,12 +61,91 @@ public class Processed<T>
         (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ReactiveProperty<>)) || 
         (type.BaseType != null && type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(ReactiveProperty<>));
 
+    void ProcessValue()
+    {
+        foreach (var processed in Processeds)
+            processed.ProcessValue();
+    }
+}
+
+[System.Serializable]
+public class Processed<T> : IDisposable
+{
+    public bool ProcessOnGet;
+    [SerializeReference] public T BaseValue;
+    [SerializeReference] protected T _value;
+    public T Value
+    { 
+        get
+        {
+            if (ProcessOnGet) ProcessValue();
+            return _value;
+        }
+    }
+    [SerializeReference] private SortedList<int, List<ReactiveProcessor<T>>> Processors = new SortedList<int, List<ReactiveProcessor<T>>>();
+    
+    public Processed(T initialValue, bool processOnGet = false)
+    {
+        ProcessOnGet = processOnGet;
+        BaseValue = initialValue;
+        _value = initialValue;
+    }
+
+    public Processed() {} //не удалять, в unity вызывается пустой конструктор
+
+    ~Processed() => Dispose();//проверить как работает
+
+    public void Dispose()
+    {
+        foreach (var processorList in Processors.Values)
+            foreach (var processor in processorList)
+                processor.Processeds.Remove(this);
+    }
+
+    public void AddProcessor(ReactiveProcessor<T> processor, int priority)
+    {
+        processor.Processeds.Add(this);
+
+        if (Processors.ContainsKey(priority)) 
+            Processors[priority].Add(processor);
+        else 
+            Processors.Add(priority, new List<ReactiveProcessor<T>>(){processor});
+
+        ProcessValue();
+    }
+
+    public void RemoveProcessor(ReactiveProcessor<T> processor)
+    {
+        foreach (var processorList in Processors.Values)
+            if (processorList.Contains(processor)) 
+                processorList.Remove(processor);    
+    }
+
+    public void RemoveProcessor(ReactiveProcessor<T> processor, int priority)
+    {
+        if (Processors[priority].FirstOrDefault(x => x == processor) == null) 
+        {
+            Debug.LogWarning("Can't find processor to remove.");    
+            return;
+        }
+        else 
+            Processors[priority].Remove(processor);
+
+        if (!ContainsProcessor(processor)) 
+            processor.Processeds.Remove(this);
+
+        ProcessValue();            
+    }
+
+    private bool ContainsProcessor(ReactiveProcessor<T> processor) =>
+        Processors.Any(x => x.Value.Contains(processor) == true);
+
     public virtual void ProcessValue()
     {
         _value = BaseValue;
         foreach (var priorityList in Processors)
             foreach (var processor in priorityList.Value)
-                processor(ref _value);
+                processor.Processor(ref _value);
     } 
 }
 
